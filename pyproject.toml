@@ -1,0 +1,41 @@
+[project]
+name = "google-calendar-whisper"
+version = "0.1.0"
+description = "Telegram bot — голосовые и текстовые сообщения в события Google Calendar через OpenAI Whisper + GPT"
+requires-python = ">=3.12"
+dependencies = [
+    "python-telegram-bot[ext]>=21.0",
+    "openai>=1.0",
+    "google-api-python-client>=2.100",
+    "google-auth-oauthlib>=1.0",
+    "APScheduler>=3.10",
+    "SQLAlchemy[asyncio]>=2.0",
+    "aiosqlite>=0.19",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "python-dotenv>=1.0",
+    "structlog>=23.0",
+    "aiofiles>=23.0",
+    "uvicorn[standard]>=0.25",
+    "fastapi>=0.104",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.25",
+    "pytest-cov>=4.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

@@ -1,0 +1,30 @@
+services:
+  calendar-bot:
+    build: .
+    container_name: calendar-bot
+    restart: unless-stopped
+
+    ports:
+      - "8443:8443"
+
+    volumes:
+      # SQLite БД — персистентно между перезапусками
+      - bot-data:/data
+      # SSL-сертификаты — монтируем с хоста
+      - ${SSL_CERT_PATH:-/dev/null}:/ssl/cert.pem:ro
+      - ${SSL_KEY_PATH:-/dev/null}:/ssl/key.pem:ro
+
+    env_file:
+      - .env
+
+    environment:
+      # Переопределяем путь к БД на volumen
+      DATABASE_URL: "sqlite+aiosqlite:///data/bot.db"
+      # SSL-пути внутри контейнера
+      SSL_CERT_PATH: "/ssl/cert.pem"
+      SSL_KEY_PATH: "/ssl/key.pem"
+      WEBHOOK_HOST: "0.0.0.0"
+      WEBHOOK_PORT: "8443"
+
+volumes:
+  bot-data:
