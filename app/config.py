@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,7 +16,9 @@ class Settings(BaseSettings):
     )
 
     # Telegram
-    bot_token: str
+    bot_token: str = Field(
+        validation_alias=AliasChoices("BOT_TOKEN", "TELEGRAM_BOT_TOKEN", "TELEGRAM_TOKEN")
+    )
 
     # OpenAI
     openai_api_key: str
