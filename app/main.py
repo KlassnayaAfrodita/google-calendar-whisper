@@ -27,6 +27,7 @@ from telegram.ext import Application
 from app.calendar.auth import (
     build_token_from_credentials,
     exchange_code_for_token,
+    resolve_oauth_state,
     resolve_chat_id_from_state,
     save_token_for_user,
 )
@@ -88,17 +89,18 @@ async def oauth_callback(
     nonce одноразовый и имеет TTL (см. oauth_state.py).
     Подмена state чужим chat_id невозможна — nonce не угадать.
     """
-    # Разрешаем state → chat_id (one-time nonce)
-    chat_id = resolve_chat_id_from_state(state)
-    if chat_id is None:
+    # Разрешаем state -> chat_id + PKCE verifier (one-time nonce)
+    oauth_state = resolve_oauth_state(state)
+    if oauth_state is None:
         return HTMLResponse(
             content="<h2>❌ Недействительный или истёкший запрос.</h2>"
             "<p>Отправьте /start боту снова, чтобы получить новую ссылку.</p>",
             status_code=400,
         )
+    chat_id, code_verifier = oauth_state
 
     # Обмениваем код на токен
-    credentials = await exchange_code_for_token(code)
+    credentials = await exchange_code_for_token(code, code_verifier=code_verifier)
     if credentials is None:
         return HTMLResponse(
             content="<h2>❌ Ошибка при обмене кода на токен.</h2>"

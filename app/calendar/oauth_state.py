@@ -21,7 +21,7 @@ _states: dict[str, dict[str, Any]] = {}
 _TTL_SECONDS = 600
 
 
-def create_state(chat_id: int) -> str:
+def create_state(chat_id: int, code_verifier: str | None = None) -> str:
     """Создать одноразовый state nonce для chat_id.
 
     Возвращает случайную строку, которую можно безопасно передавать в URL.
@@ -30,12 +30,13 @@ def create_state(chat_id: int) -> str:
     _states[nonce] = {
         "chat_id": chat_id,
         "expires_at": time.monotonic() + _TTL_SECONDS,
+        "code_verifier": code_verifier,
         "used": False,
     }
     return nonce
 
 
-def resolve_state(nonce: str) -> int | None:
+def resolve_state_data(nonce: str) -> dict[str, Any] | None:
     """Разрешить state nonce обратно в chat_id.
 
     Возвращает chat_id если nonce валиден и не истёк, иначе None.
@@ -57,6 +58,14 @@ def resolve_state(nonce: str) -> int | None:
 
     # Помечаем как использованный и удаляем
     del _states[nonce]
+    return data
+
+
+def resolve_state(nonce: str) -> int | None:
+    """Разрешить state nonce обратно в chat_id."""
+    data = resolve_state_data(nonce)
+    if data is None:
+        return None
     return data["chat_id"]
 
 

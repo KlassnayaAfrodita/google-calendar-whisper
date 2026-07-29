@@ -29,7 +29,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from sqlalchemy import select
 
-from app.calendar.oauth_state import create_state, resolve_state
+from app.calendar.oauth_state import create_state, resolve_state, resolve_state_data
 from app.config import settings
 from app.db.session import async_session_factory
 from app.models import OAuthToken
@@ -70,11 +70,10 @@ def get_auth_url(
     Никогда не передаёт chat_id в открытом виде.
     """
     flow = build_oauth_flow(redirect_uri)
-    state_nonce = create_state(chat_id)
     url, _state = flow.authorization_url(
         access_type="offline",
         prompt="consent",
-        state=state_nonce,
+        state=create_state(chat_id, getattr(flow, "code_verifier", None)),
     )
     return url
 
@@ -96,9 +95,23 @@ def resolve_chat_id_from_state(state_nonce: str) -> int | None:
 # Token exchange (CRITICAL #2: fetch_token обёрнут в to_thread)
 # ---------------------------------------------------------------------------
 
-def _fetch_token_sync(code: str, redirect_uri: str | None = None) -> Credentials | None:
+def resolve_oauth_state(state_nonce: str) -> tuple[int, str | None] | None:
+    """Resolve one-time OAuth state into chat_id and optional PKCE code verifier."""
+    data = resolve_state_data(state_nonce)
+    if data is None:
+        return None
+    return data["chat_id"], data.get("code_verifier")
+
+
+def _fetch_token_sync(
+    code: str,
+    redirect_uri: str | None = None,
+    code_verifier: str | None = None,
+) -> Credentials | None:
     """Синхронная функция для обмена кода на токен. Выполняется в потоке."""
     flow = build_oauth_flow(redirect_uri)
+    if code_verifier:
+        flow.code_verifier = code_verifier
     try:
         flow.fetch_token(code=code)
         return flow.credentials
@@ -110,13 +123,14 @@ def _fetch_token_sync(code: str, redirect_uri: str | None = None) -> Credentials
 async def exchange_code_for_token(
     code: str,
     redirect_uri: str | None = None,
+    code_verifier: str | None = None,
 ) -> Credentials | None:
     """Обменять авторизационный код на Credentials.
 
     CRITICAL #2: синхронный fetch_token обёрнут в asyncio.to_thread,
     чтобы не блокировать event loop.
     """
-    return await asyncio.to_thread(_fetch_token_sync, code, redirect_uri)
+    return await asyncio.to_thread(_fetch_token_sync, code, redirect_uri, code_verifier)
 
 
 def build_token_from_credentials(credentials: Credentials) -> OAuthToken:
