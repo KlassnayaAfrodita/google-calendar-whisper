@@ -153,10 +153,15 @@ async def oauth_callback(
         len(state),
         len(code),
     )
+    print(
+        f"OAuth callback received: state_len={len(state)} code_len={len(code)}",
+        flush=True,
+    )
     # Разрешаем state -> chat_id + PKCE verifier (one-time nonce)
     oauth_state = resolve_oauth_state(state)
     if oauth_state is None:
         logger.warning("OAuth callback rejected: state not found or expired")
+        print("OAuth callback rejected: state not found or expired", flush=True)
         return HTMLResponse(
             content="<h2>❌ Недействительный или истёкший запрос.</h2>"
             "<p>Отправьте /start боту снова, чтобы получить новую ссылку.</p>",
@@ -168,16 +173,24 @@ async def oauth_callback(
         chat_id,
         "set" if code_verifier else "missing",
     )
+    print(
+        "OAuth callback state resolved: "
+        f"chat_id={chat_id} code_verifier={'set' if code_verifier else 'missing'}",
+        flush=True,
+    )
 
     # Обмениваем код на токен
     credentials = await exchange_code_for_token(code, code_verifier=code_verifier)
     if credentials is None:
         logger.warning("OAuth callback token exchange failed: chat_id=%s", chat_id)
+        print(f"OAuth callback token exchange failed: chat_id={chat_id}", flush=True)
         return HTMLResponse(
             content="<h2>❌ Ошибка при обмене кода на токен.</h2>"
-            "<p>Попробуйте снова: /start</p>"
+            "<p>Попробуйте снова: /start</p>",
+            status_code=502,
         )
     logger.info("OAuth callback token exchange succeeded: chat_id=%s", chat_id)
+    print(f"OAuth callback token exchange succeeded: chat_id={chat_id}", flush=True)
 
     # Ищем пользователя по chat_id
     async with async_session_factory() as session:
@@ -195,6 +208,7 @@ async def oauth_callback(
     # Сохраняем токен
     token = build_token_from_credentials(credentials)
     await save_token_for_user(user.id, token)
+    print(f"OAuth callback token saved: user_id={user.id} chat_id={chat_id}", flush=True)
 
     # Уведомляем пользователя через бота
     await _notify_user(chat_id, "✅ Google Calendar успешно подключён!\n\nТеперь вы можете отправлять мне голосовые и текстовые команды для управления вашим календарём.\n\n/help — справка.")

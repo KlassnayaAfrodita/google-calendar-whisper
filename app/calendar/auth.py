@@ -121,10 +121,28 @@ def _fetch_token_sync(
     if code_verifier:
         flow.code_verifier = code_verifier
     try:
+        print(
+            "Google OAuth fetch_token start: "
+            f"redirect_uri={flow.redirect_uri} "
+            f"code_len={len(code)} "
+            f"code_verifier={'set' if code_verifier else 'missing'}",
+            flush=True,
+        )
         flow.fetch_token(code=code)
+        print(
+            "Google OAuth fetch_token success: "
+            f"has_refresh_token={bool(flow.credentials.refresh_token)} "
+            f"scopes={flow.credentials.scopes}",
+            flush=True,
+        )
         return flow.credentials
-    except Exception:
+    except Exception as exc:
         logger.exception("Ошибка обмена кода на токен Google OAuth")
+        print(
+            "Google OAuth fetch_token failed: "
+            f"{type(exc).__name__}: {exc}",
+            flush=True,
+        )
         return None
 
 
