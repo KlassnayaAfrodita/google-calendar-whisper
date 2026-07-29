@@ -38,6 +38,8 @@ from app.services.scheduler import build_scheduler
 
 logger = logging.getLogger(__name__)
 TOKEN_PATTERN = re.compile(r"^\d+:[A-Za-z0-9_-]{20,}$")
+telegram_app: Application | None = None
+scheduler = None
 
 
 # ---------------------------------------------------------------------------
@@ -63,10 +65,67 @@ def _setup_logging() -> None:
 # FastAPI app для OAuth callback (только при oauth_mode=server)
 # ---------------------------------------------------------------------------
 
+async def start_runtime() -> None:
+    """Start DB, Telegram polling, and scheduler once."""
+    global telegram_app, scheduler
+
+    if telegram_app is not None:
+        return
+
+    _setup_logging()
+    logger.info("Запуск Calendar Bot (oauth_mode=%s)...", settings.oauth_mode)
+    logger.info(
+        "Telegram token env: BOT_TOKEN=%s TELEGRAM_BOT_TOKEN=%s TELEGRAM_TOKEN=%s selected_len=%s selected_format_ok=%s",
+        "set" if os.getenv("BOT_TOKEN") else "missing",
+        "set" if os.getenv("TELEGRAM_BOT_TOKEN") else "missing",
+        "set" if os.getenv("TELEGRAM_TOKEN") else "missing",
+        len(settings.bot_token),
+        bool(TOKEN_PATTERN.match(settings.bot_token)),
+    )
+
+    await init_db()
+    logger.info("БД инициализирована")
+
+    from app.telegram.bot import build_application
+
+    telegram_app = build_application()
+    await telegram_app.initialize()
+    await telegram_app.start()
+    if telegram_app.updater is None:
+        raise RuntimeError("Telegram updater не создан")
+    await telegram_app.updater.start_polling()
+    logger.info("Telegram polling запущен")
+
+    scheduler = build_scheduler()
+    scheduler.start()
+    logger.info("Планировщик уведомлений запущен")
+
+
+async def stop_runtime() -> None:
+    """Stop background runtime components."""
+    global telegram_app, scheduler
+
+    if scheduler is not None and scheduler.running:
+        scheduler.shutdown(wait=False)
+    scheduler = None
+
+    if telegram_app is not None:
+        if telegram_app.updater is not None and telegram_app.updater.running:
+            await telegram_app.updater.stop()
+        if telegram_app.running:
+            await telegram_app.stop()
+        await telegram_app.shutdown()
+    telegram_app = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan: пустой. init_db() вызывается в run() явно."""
-    yield
+    """FastAPI lifespan used by uvicorn on Bothost."""
+    await start_runtime()
+    try:
+        yield
+    finally:
+        await stop_runtime()
 
 
 fastapi_app = FastAPI(title="Calendar Bot OAuth", lifespan=lifespan)
@@ -268,6 +327,18 @@ async def run() -> None:
         if telegram_app.running:
             await telegram_app.stop()
         await telegram_app.shutdown()
+
+
+async def run() -> None:
+    """Run FastAPI; lifespan starts Telegram polling and scheduler."""
+    config = uvicorn.Config(
+        app=fastapi_app,
+        host=settings.webhook_host,
+        port=settings.app_port,
+        log_level=settings.log_level.lower(),
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
 
 
 def main() -> None:
