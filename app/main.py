@@ -148,23 +148,36 @@ async def oauth_callback(
     nonce одноразовый и имеет TTL (см. oauth_state.py).
     Подмена state чужим chat_id невозможна — nonce не угадать.
     """
+    logger.info(
+        "OAuth callback received: state_len=%s code_len=%s",
+        len(state),
+        len(code),
+    )
     # Разрешаем state -> chat_id + PKCE verifier (one-time nonce)
     oauth_state = resolve_oauth_state(state)
     if oauth_state is None:
+        logger.warning("OAuth callback rejected: state not found or expired")
         return HTMLResponse(
             content="<h2>❌ Недействительный или истёкший запрос.</h2>"
             "<p>Отправьте /start боту снова, чтобы получить новую ссылку.</p>",
             status_code=400,
         )
     chat_id, code_verifier = oauth_state
+    logger.info(
+        "OAuth callback state resolved: chat_id=%s code_verifier=%s",
+        chat_id,
+        "set" if code_verifier else "missing",
+    )
 
     # Обмениваем код на токен
     credentials = await exchange_code_for_token(code, code_verifier=code_verifier)
     if credentials is None:
+        logger.warning("OAuth callback token exchange failed: chat_id=%s", chat_id)
         return HTMLResponse(
             content="<h2>❌ Ошибка при обмене кода на токен.</h2>"
             "<p>Попробуйте снова: /start</p>"
         )
+    logger.info("OAuth callback token exchange succeeded: chat_id=%s", chat_id)
 
     # Ищем пользователя по chat_id
     async with async_session_factory() as session:

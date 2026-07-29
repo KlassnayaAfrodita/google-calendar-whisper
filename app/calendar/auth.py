@@ -21,9 +21,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import secrets
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlencode
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -70,15 +70,20 @@ def get_auth_url(
     Безопасность: state = случайный nonce, привязанный к chat_id (см. oauth_state.py).
     Никогда не передаёт chat_id в открытом виде.
     """
-    flow = build_oauth_flow(redirect_uri)
-    flow.code_verifier = secrets.token_urlsafe(64)
-    state_nonce = create_state(chat_id, flow.code_verifier)
-    url, _state = flow.authorization_url(
-        access_type="offline",
-        prompt="consent",
-        state=state_nonce,
+    redirect = redirect_uri or settings.google_redirect_uri
+    state_nonce = create_state(chat_id)
+    query = urlencode(
+        {
+            "response_type": "code",
+            "client_id": settings.google_client_id,
+            "redirect_uri": redirect,
+            "scope": " ".join(SCOPES),
+            "state": state_nonce,
+            "access_type": "offline",
+            "prompt": "consent",
+        }
     )
-    return url
+    return f"https://accounts.google.com/o/oauth2/auth?{query}"
 
 
 # ---------------------------------------------------------------------------

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qs, urlparse
 from unittest.mock import MagicMock
 
-from app.calendar.auth import _normalize_expiry, build_token_from_credentials
+from app.calendar.auth import _normalize_expiry, build_token_from_credentials, get_auth_url, resolve_oauth_state
 
 
 def _credentials(expiry):
@@ -36,3 +37,19 @@ def test_normalize_expiry_accepts_legacy_timestamp():
 
 def test_normalize_expiry_preserves_none():
     assert _normalize_expiry(None) is None
+
+
+def test_auth_url_uses_state_without_pkce():
+    url = get_auth_url(chat_id=12345, redirect_uri="https://example.com/oauth/callback")
+
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+
+    assert parsed.scheme == "https"
+    assert parsed.netloc == "accounts.google.com"
+    assert "code_challenge" not in query
+    assert "code_challenge_method" not in query
+    assert query["redirect_uri"] == ["https://example.com/oauth/callback"]
+
+    state = query["state"][0]
+    assert resolve_oauth_state(state) == (12345, None)
