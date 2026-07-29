@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import secrets
 from datetime import datetime, timezone
 from typing import Any
 
@@ -70,10 +71,12 @@ def get_auth_url(
     Никогда не передаёт chat_id в открытом виде.
     """
     flow = build_oauth_flow(redirect_uri)
+    flow.code_verifier = secrets.token_urlsafe(64)
+    state_nonce = create_state(chat_id, flow.code_verifier)
     url, _state = flow.authorization_url(
         access_type="offline",
         prompt="consent",
-        state=create_state(chat_id, getattr(flow, "code_verifier", None)),
+        state=state_nonce,
     )
     return url
 
