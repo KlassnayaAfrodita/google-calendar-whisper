@@ -46,8 +46,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Копируем код приложения
 COPY app/ ./app/
 
-# Создаём директорию для данных (SQLite БД)
-RUN mkdir -p /app/data && chown -R bot:bot /app/data && chmod 0777 /app/data
+# Bothost создает persistent-хранилище в /app/data.
+RUN mkdir -p /app/data && chmod 0777 /app/data
 
 # Переменные окружения
 ENV PYTHONUNBUFFERED=1 \
@@ -59,8 +59,7 @@ ENV PYTHONUNBUFFERED=1 \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://localhost:8000/health || exit 1
 
-# Переключаемся на непривилегированного пользователя
-USER bot
+# Bothost монтирует persistent storage в /app/data; root гарантирует доступ на запись.
 
 EXPOSE 8000
 
