@@ -52,16 +52,16 @@ RUN mkdir -p /app/data && chmod 0777 /app/data
 # Переменные окружения
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/srv/bot \
-    PORT=8000 \
+    PORT=3000 \
     DATABASE_URL=sqlite+aiosqlite:////app/data/bot.db
 
 # healthcheck — внутренний HTTP-сервер (TLS завершает reverse proxy)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -fsS http://localhost:8000/health || exit 1
+    CMD sh -c 'curl -fsS "http://localhost:${PORT:-3000}/health" || exit 1'
 
 # Bothost монтирует persistent storage в /app/data; root гарантирует доступ на запись.
 
-EXPOSE 8000
+EXPOSE 3000
 
 # Запуск
-CMD ["uvicorn", "app.main:fastapi_app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:fastapi_app --host 0.0.0.0 --port ${PORT:-3000}"]
