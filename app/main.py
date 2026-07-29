@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import re
 from contextlib import asynccontextmanager
 
 import structlog
@@ -34,6 +36,7 @@ from app.models import User
 from app.services.scheduler import build_scheduler
 
 logger = logging.getLogger(__name__)
+TOKEN_PATTERN = re.compile(r"^\d+:[A-Za-z0-9_-]{20,}$")
 
 
 # ---------------------------------------------------------------------------
@@ -205,6 +208,14 @@ async def run() -> None:
     """Запуск бота, планировщика и HTTP callback-сервера."""
     _setup_logging()
     logger.info("Запуск Calendar Bot (oauth_mode=%s)...", settings.oauth_mode)
+    logger.info(
+        "Telegram token env: BOT_TOKEN=%s TELEGRAM_BOT_TOKEN=%s TELEGRAM_TOKEN=%s selected_len=%s selected_format_ok=%s",
+        "set" if os.getenv("BOT_TOKEN") else "missing",
+        "set" if os.getenv("TELEGRAM_BOT_TOKEN") else "missing",
+        "set" if os.getenv("TELEGRAM_TOKEN") else "missing",
+        len(settings.bot_token),
+        bool(TOKEN_PATTERN.match(settings.bot_token)),
+    )
 
     # Инициализация БД (единственный вызов — lifespan пустой)
     await init_db()
