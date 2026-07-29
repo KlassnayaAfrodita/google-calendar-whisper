@@ -38,6 +38,7 @@ from app.services.scheduler import build_scheduler
 
 logger = logging.getLogger(__name__)
 TOKEN_PATTERN = re.compile(r"^\d+:[A-Za-z0-9_-]{20,}$")
+BUILD_ID = "debug-oauth-ee58168-plus"
 telegram_app: Application | None = None
 scheduler = None
 
@@ -137,6 +138,17 @@ async def health_check() -> PlainTextResponse:
     return PlainTextResponse("OK")
 
 
+@fastapi_app.get("/debug/version")
+async def debug_version() -> dict[str, str | int]:
+    """Deployment marker for checking which build Bothost is running."""
+    return {
+        "build_id": BUILD_ID,
+        "port": settings.app_port,
+        "oauth_mode": settings.oauth_mode,
+        "redirect_uri": settings.google_redirect_uri,
+    }
+
+
 @fastapi_app.get("/oauth/callback")
 async def oauth_callback(
     code: str = Query(...),
@@ -200,9 +212,12 @@ async def oauth_callback(
         user = result.scalar_one_or_none()
 
     if user is None:
+        print(f"OAuth callback user not found: chat_id={chat_id}", flush=True)
         return HTMLResponse(
             content="<h2>❌ Пользователь не найден.</h2>"
             "<p>Сначала отправьте /start боту.</p>"
+            f"<p>build_id={BUILD_ID}</p>",
+            status_code=404,
         )
 
     # Сохраняем токен
@@ -219,6 +234,7 @@ async def oauth_callback(
             "<h2>✅ Google Calendar подключён!</h2>"
             "<p>Вернитесь в Telegram — бот готов к работе.</p>"
             "<p>Теперь можно закрыть эту вкладку.</p>"
+            f"<p style='color:#777'>build_id={BUILD_ID}</p>"
             "</body></html>"
         )
     )
