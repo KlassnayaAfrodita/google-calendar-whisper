@@ -36,9 +36,11 @@ class Settings(BaseSettings):
     # Логирование
     log_level: str = "INFO"
 
-    # HTTPS-сервер
+    # HTTP-сервер. В production HTTPS завершается на reverse proxy хостинга.
     webhook_host: str = "0.0.0.0"
-    webhook_port: int = 8443
+    port: int = 8000
+    # Устаревшее имя оставлено для совместимости со старыми .env.
+    webhook_port: int | None = None
     ssl_cert_path: str = ""
     ssl_key_path: str = ""
 
@@ -46,6 +48,11 @@ class Settings(BaseSettings):
     oauth_mode: str = "local"
     # Порт для локального OAuth callback (только при oauth_mode=local)
     oauth_local_port: int = 8765
+
+    @property
+    def app_port(self) -> int:
+        """Порт HTTP-сервера: Bothost задаёт PORT, старые конфиги — WEBHOOK_PORT."""
+        return self.webhook_port or self.port
 
 
 settings = Settings()

@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+
+
+# Конфигурация-заглушка должна быть установлена до импорта модулей app во время
+# collection. В production значения всегда приходят из панели Bothost.
+os.environ.setdefault("BOT_TOKEN", "123456789:test-token")
+os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test.apps.googleusercontent.com")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-google-secret")
+os.environ.setdefault("GOOGLE_REDIRECT_URI", "https://example.test/oauth/callback")
 
 
 @pytest.fixture()

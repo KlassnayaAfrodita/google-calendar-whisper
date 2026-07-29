@@ -9,6 +9,7 @@ build/
 .env
 *.db
 bot.db
+data/
 
 # Secrets
 credentials.json

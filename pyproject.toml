@@ -4,20 +4,20 @@ version = "0.1.0"
 description = "Telegram bot — голосовые и текстовые сообщения в события Google Calendar через OpenAI Whisper + GPT"
 requires-python = ">=3.12"
 dependencies = [
-    "python-telegram-bot[ext]>=21.0",
-    "openai>=1.0",
-    "google-api-python-client>=2.100",
-    "google-auth-oauthlib>=1.0",
-    "APScheduler>=3.10",
-    "SQLAlchemy[asyncio]>=2.0",
-    "aiosqlite>=0.19",
-    "pydantic>=2.0",
-    "pydantic-settings>=2.0",
-    "python-dotenv>=1.0",
-    "structlog>=23.0",
-    "aiofiles>=23.0",
-    "uvicorn[standard]>=0.25",
-    "fastapi>=0.104",
+    "python-telegram-bot[ext]==22.8",
+    "openai==2.48.0",
+    "google-api-python-client==2.198.0",
+    "google-auth-oauthlib==1.4.0",
+    "APScheduler==3.11.3",
+    "SQLAlchemy[asyncio]==2.0.51",
+    "aiosqlite==0.22.1",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.2",
+    "python-dotenv==1.2.2",
+    "structlog==26.1.0",
+    "aiofiles==25.1.0",
+    "uvicorn[standard]==0.51.0",
+    "fastapi==0.140.0",
 ]
 
 [project.optional-dependencies]

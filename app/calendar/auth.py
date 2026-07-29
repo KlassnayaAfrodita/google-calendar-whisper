@@ -121,10 +121,7 @@ async def exchange_code_for_token(
 
 def build_token_from_credentials(credentials: Credentials) -> OAuthToken:
     """Создать ORM-объект OAuthToken из Credentials."""
-    expires_at = None
-    if credentials.expiry:
-        # credentials.expiry — Unix timestamp (int/float)
-        expires_at = datetime.fromtimestamp(credentials.expiry, tz=timezone.utc)
+    expires_at = _normalize_expiry(credentials.expiry)
 
     return OAuthToken(
         access_token=credentials.token,
@@ -137,6 +134,17 @@ def build_token_from_credentials(credentials: Credentials) -> OAuthToken:
         expires_at=expires_at,
         scopes=json.dumps(credentials.scopes) if credentials.scopes else None,
     )
+
+
+def _normalize_expiry(expiry: datetime | int | float | None) -> datetime | None:
+    """Нормализовать expiry в naive UTC для SQLAlchemy/SQLite и google-auth."""
+    if expiry is None:
+        return None
+    if isinstance(expiry, datetime):
+        if expiry.tzinfo is None:
+            return expiry
+        return expiry.astimezone(timezone.utc).replace(tzinfo=None)
+    return datetime.fromtimestamp(expiry, tz=timezone.utc).replace(tzinfo=None)
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +212,7 @@ async def get_credentials_for_user(user_id: int) -> Credentials | None:
             client_id=settings.google_client_id,
             client_secret=settings.google_client_secret,
             scopes=json.loads(token.scopes) if token.scopes else SCOPES,
+            expiry=token.expires_at,
         )
 
         # Проверяем и обновляем при необходимости
@@ -223,9 +232,7 @@ async def get_credentials_for_user(user_id: int) -> Credentials | None:
             # Сохраняем обновлённый access_token
             token.access_token = credentials.token
             if credentials.expiry:
-                token.expires_at = datetime.fromtimestamp(
-                    credentials.expiry, tz=timezone.utc
-                )
+                token.expires_at = _normalize_expiry(credentials.expiry)
             await session.commit()
             logger.info("Токен обновлён для user_id=%s", user_id)
 

@@ -65,7 +65,7 @@ def _build_oauth_instructions(chat_id: int) -> tuple[str, str]:
             "   <code>http://localhost/?state=...&code=4/...</code>\n"
             "4️⃣ Скопируйте часть <code>4/...</code> после <code>code=</code>\n"
             "5️⃣ Отправьте этот код мне в чат\n\n"
-            f"🔗 [Подключить Google Calendar]({url})\n\n"
+            f'🔗 <a href="{url}">Подключить Google Calendar</a>\n\n'
             "Или отправьте /help для справки."
         )
         return url, instructions
@@ -75,7 +75,7 @@ def _build_oauth_instructions(chat_id: int) -> tuple[str, str]:
         instructions = (
             "👋 Привет! Я бот-календарь.\n\n"
             "Для начала подключите свой Google Calendar:\n"
-            f"🔗 [Подключить Google Calendar]({url})\n\n"
+            f'🔗 <a href="{url}">Подключить Google Calendar</a>\n\n'
             "После подключения отправьте мне голосовое или текстовое сообщение "
             "с событием — я добавлю его в ваш календарь.\n\n"
             "Или отправьте /help для справки."

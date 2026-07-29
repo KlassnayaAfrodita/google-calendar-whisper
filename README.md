@@ -1,5 +1,9 @@
 # 🗓️ Telegram Google Calendar Bot — Python
 
+> Для размещения на Bothost используйте инструкцию
+> [BOTHOST_DEPLOY.md](BOTHOST_DEPLOY.md). Конфигурация VPS с собственными
+> сертификатами ниже не применяется к reverse proxy Bothost.
+
 > Python-порт [telegram-google-calendar-bot](https://github.com/sana2k/telegram-google-calendar-bot) с сохранением всей бизнес-логики, но с чистой архитектурой, multi-user поддержкой, ежедневными уведомлениями и polling-режимом.
 
 Бот превращает **голосовые и текстовые сообщения** в события Google Calendar с помощью OpenAI Whisper + GPT-4o-mini.

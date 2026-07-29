@@ -5,26 +5,20 @@ services:
     restart: unless-stopped
 
     ports:
-      - "8443:8443"
+      - "8000:8000"
 
     volumes:
       # SQLite БД — персистентно между перезапусками
-      - bot-data:/data
-      # SSL-сертификаты — монтируем с хоста
-      - ${SSL_CERT_PATH:-/dev/null}:/ssl/cert.pem:ro
-      - ${SSL_KEY_PATH:-/dev/null}:/ssl/key.pem:ro
+      - bot-data:/app/data
 
     env_file:
       - .env
 
     environment:
       # Переопределяем путь к БД на volumen
-      DATABASE_URL: "sqlite+aiosqlite:///data/bot.db"
-      # SSL-пути внутри контейнера
-      SSL_CERT_PATH: "/ssl/cert.pem"
-      SSL_KEY_PATH: "/ssl/key.pem"
+      DATABASE_URL: "sqlite+aiosqlite:////app/data/bot.db"
       WEBHOOK_HOST: "0.0.0.0"
-      WEBHOOK_PORT: "8443"
+      PORT: "8000"
 
 volumes:
   bot-data:

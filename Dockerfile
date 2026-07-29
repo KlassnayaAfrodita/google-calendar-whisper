@@ -12,13 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
+COPY app/ ./app/
 
 # Устанавливаем зависимости в отдельный venv
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e ".[dev]"
+    pip install --no-cache-dir .
 
 # ============================================================
 # Stage 2: финальный образ
@@ -34,7 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Создаём непривилегированного пользователя
 RUN groupadd -r bot && useradd -r -g bot -d /app -s /sbin/nologin bot
 
-WORKDIR /app
+# Bothost монтирует исходники в /app. Код образа держим отдельно, чтобы этот
+# mount не скрывал установленные файлы.
+WORKDIR /srv/bot
 
 # Копируем venv из builder
 COPY --from=builder /opt/venv /opt/venv
@@ -42,25 +45,24 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Копируем код приложения
 COPY app/ ./app/
-COPY tests/ ./tests/
-COPY README.md MIGRATION_NOTES.md ./
 
 # Создаём директорию для данных (SQLite БД)
-RUN mkdir -p /data && chown bot:bot /data
+RUN mkdir -p /app/data && chown -R bot:bot /app/data && chmod 0777 /app/data
 
 # Переменные окружения
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
-    DATABASE_URL=sqlite+aiosqlite:///data/bot.db
+    PYTHONPATH=/srv/bot \
+    PORT=8000 \
+    DATABASE_URL=sqlite+aiosqlite:////app/data/bot.db
 
-# healthcheck — HTTPS-сервер
+# healthcheck — внутренний HTTP-сервер (TLS завершает reverse proxy)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -fsk https://localhost:8443/health || exit 1
+    CMD-SHELL curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
 
 # Переключаемся на непривилегированного пользователя
 USER bot
 
-EXPOSE 8443
+EXPOSE 8000
 
 # Запуск
 CMD ["python", "-m", "app.main"]

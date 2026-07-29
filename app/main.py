@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import ssl
 from contextlib import asynccontextmanager
 
 import structlog
@@ -203,7 +202,7 @@ async def oauth_local(code: str, state_nonce: str, chat_id_from_chat: int) -> st
 # ---------------------------------------------------------------------------
 
 async def run() -> None:
-    """Запуск бота + FastAPI сервера (при server-режиме) + планировщика."""
+    """Запуск бота, планировщика и HTTP callback-сервера."""
     _setup_logging()
     logger.info("Запуск Calendar Bot (oauth_mode=%s)...", settings.oauth_mode)
 
@@ -216,49 +215,46 @@ async def run() -> None:
 
     telegram_app: Application = build_application()
 
-    # Запускаем polling в фоне
-    async def _run_bot():
+    sched = build_scheduler()
+    try:
+        # Ошибка токена должна завершить процесс, а не оставить только health-сервер.
         await telegram_app.initialize()
         await telegram_app.start()
+        if telegram_app.updater is None:
+            raise RuntimeError("Telegram updater не создан")
         await telegram_app.updater.start_polling()
         logger.info("Telegram polling запущен")
 
-    asyncio.create_task(_run_bot())
+        sched.start()
+        logger.info("Планировщик уведомлений запущен")
 
-    # Планировщик уведомлений
-    sched = build_scheduler()
-    sched.start()
-    logger.info("Планировщик уведомлений запущен")
-
-    # FastAPI HTTPS-сервер (только при oauth_mode=server)
-    if settings.oauth_mode == "server":
-        # CRITICAL security: в server-режиме SSL обязателен
-        if not (settings.ssl_cert_path and settings.ssl_key_path):
-            raise RuntimeError(
-                "В OAUTH_MODE=server требуются SSL_CERT_PATH и SSL_KEY_PATH. "
-                "OAuth callback MUST be served over HTTPS. "
-                "Либо настройте SSL, либо используйте OAUTH_MODE=local."
+        if settings.oauth_mode == "server":
+            # Bothost завершает TLS на reverse proxy и проксирует HTTP внутрь
+            # контейнера. Поэтому сертификаты приложению не требуются.
+            config = uvicorn.Config(
+                app=fastapi_app,
+                host=settings.webhook_host,
+                port=settings.app_port,
+                log_level=settings.log_level.lower(),
             )
-
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(settings.ssl_cert_path, settings.ssl_key_path)
-        logger.info("HTTPS включён: cert=%s", settings.ssl_cert_path)
-
-        config = uvicorn.Config(
-            app=fastapi_app,
-            host=settings.webhook_host,
-            port=settings.webhook_port,
-            ssl=ssl_context,
-            log_level=settings.log_level.lower(),
-        )
-        server = uvicorn.Server(config)
-        logger.info("OAuth-сервер запущен на %s:%s", settings.webhook_host, settings.webhook_port)
-        await server.serve()
-    else:
-        logger.info("OAuth mode=local — HTTPS-сервер не нужен. Бот работает через polling.")
-        # При local-режиме без HTTPS-сервера — просто держим event loop
-        # Telegram polling уже запущен в фоне
-        await asyncio.Event().wait()
+            server = uvicorn.Server(config)
+            logger.info(
+                "OAuth HTTP-сервер запущен на %s:%s (HTTPS: reverse proxy)",
+                settings.webhook_host,
+                settings.app_port,
+            )
+            await server.serve()
+        else:
+            logger.info("OAuth mode=local — callback-сервер не нужен, используется polling.")
+            await asyncio.Event().wait()
+    finally:
+        if sched.running:
+            sched.shutdown(wait=False)
+        if telegram_app.updater is not None and telegram_app.updater.running:
+            await telegram_app.updater.stop()
+        if telegram_app.running:
+            await telegram_app.stop()
+        await telegram_app.shutdown()
 
 
 def main() -> None:
