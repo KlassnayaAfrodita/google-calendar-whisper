@@ -33,7 +33,7 @@ from sqlalchemy import select
 from app.calendar.oauth_state import create_state, resolve_state, resolve_state_data
 from app.config import settings
 from app.db.session import async_session_factory
-from app.models import OAuthToken
+from app.models import OAuthToken, User
 
 logger = logging.getLogger(__name__)
 
@@ -239,6 +239,17 @@ async def get_credentials_for_user(user_id: int) -> Credentials | None:
             select(OAuthToken).where(OAuthToken.user_id == user_id)
         )
         token = result.scalar_one_or_none()
+
+        if token is None:
+            user_result = await session.execute(
+                select(User.id).where(User.telegram_chat_id == user_id)
+            )
+            internal_user_id = user_result.scalar_one_or_none()
+            if internal_user_id is not None:
+                result = await session.execute(
+                    select(OAuthToken).where(OAuthToken.user_id == internal_user_id)
+                )
+                token = result.scalar_one_or_none()
 
         if token is None:
             logger.warning("OAuth токен не найден для user_id=%s", user_id)
