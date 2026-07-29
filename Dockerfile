@@ -57,7 +57,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 # healthcheck — внутренний HTTP-сервер (TLS завершает reverse proxy)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD-SHELL curl -fsS "http://localhost:${PORT:-8000}/health" || exit 1
+    CMD curl -fsS http://localhost:8000/health || exit 1
 
 # Переключаемся на непривилегированного пользователя
 USER bot
