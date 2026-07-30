@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     # OpenAI
-    openai_api_key: str
+    openai_api_key: str = Field(validation_alias="OPENAI_KEY")
 
     # Google Calendar
     google_client_id: str

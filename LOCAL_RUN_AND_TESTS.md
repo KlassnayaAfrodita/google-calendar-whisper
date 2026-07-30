@@ -181,7 +181,7 @@ cp .env.example .env
 BOT_TOKEN=123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # === OpenAI ===
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+OPENAI_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # === Google Calendar ===
 GOOGLE_CLIENT_ID=123456789-xxxxx.apps.googleusercontent.com
@@ -778,7 +778,7 @@ pytest --cov=app --cov-report=html
 ### Whisper возвращает ошибку / не расшифровывает голос
 
 **Причина:** закончились деньги на OpenAI или неверный ключ.
-**Решение:** проверьте баланс на platform.openai.com и `OPENAI_API_KEY`.
+**Решение:** проверьте баланс на platform.openai.com и `OPENAI_KEY`.
 
 ### «google.auth.exceptions.RefreshTokenError»
 
@@ -835,7 +835,7 @@ pip install -e ".[dev]"
 
 - [ ] Python 3.12+ установлен (`python --version` работает)
 - [ ] Получен `BOT_TOKEN` от BotFather
-- [ ] Получен `OPENAI_API_KEY` (и есть деньги на балансе)
+- [ ] Получен `OPENAI_KEY` (и есть деньги на балансе)
 - [ ] Получены `GOOGLE_CLIENT_ID` и `GOOGLE_CLIENT_SECRET`
 - [ ] В Google Cloud Console включён Calendar API и добавлен redirect `http://localhost`
 - [ ] Выполнено `pip install -e ".[dev]"`

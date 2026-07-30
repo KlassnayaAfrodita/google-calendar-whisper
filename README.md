@@ -86,7 +86,7 @@ cp .env.example .env
 Заполните:
 ```env
 BOT_TOKEN=123456789:ABC...
-OPENAI_API_KEY=sk-...
+OPENAI_KEY=sk-...
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-xxx
 
@@ -159,7 +159,7 @@ cp .env.example .env
 Заполните `.env`:
 ```env
 BOT_TOKEN=...
-OPENAI_API_KEY=...
+OPENAI_KEY=...
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=https://calendar.example.com/oauth/callback
@@ -285,7 +285,7 @@ pytest --cov=app tests/
 | Переменная | Описание | По умолчанию |
 |---|---|---|
 | `BOT_TOKEN` | Telegram bot token от @BotFather | — |
-| `OPENAI_API_KEY` | OpenAI API key | — |
+| `OPENAI_KEY` | OpenAI API key | — |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | — |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | — |
 | `GOOGLE_CALENDAR_ID` | ID календаря (`primary`) | `primary` |
