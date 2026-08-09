@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Calendar Whisper</title>
+  <meta name="description" content="Telegram bot for managing Google Calendar events with text and voice commands.">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5ef;
+      --text: #1e2428;
+      --muted: #58646b;
+      --line: #d9d2c4;
+      --accent: #006d77;
+      --panel: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header, main, footer {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    header { padding: 64px 0 28px; }
+    nav {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+      font-size: 15px;
+    }
+    a { color: var(--accent); }
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 720px;
+      font-size: 20px;
+      color: var(--muted);
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin: 22px 0;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 24px;
+    }
+    ul {
+      margin: 12px 0 0;
+      padding-left: 22px;
+    }
+    code {
+      background: #eef3f1;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    footer {
+      padding: 28px 0 56px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Site navigation">
+      <a href="./">Home</a>
+      <a href="./privacy.html">Privacy Policy</a>
+      <a href="./terms.html">Terms of Service</a>
+    </nav>
+    <h1>Google Calendar Whisper</h1>
+    <p class="lead">
+      A Telegram bot that helps users manage Google Calendar events with text and voice commands.
+    </p>
+  </header>
+
+  <main>
+    <section>
+      <h2>What The App Does</h2>
+      <p>
+        Google Calendar Whisper lets a user connect their Google Calendar account and then use Telegram
+        messages to create, view, update, and delete calendar events.
+      </p>
+      <ul>
+        <li>Create events from natural language messages.</li>
+        <li>Update or delete events selected by the user.</li>
+        <li>Show today's schedule and upcoming events.</li>
+        <li>Send daily calendar reminders when enabled.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Google Calendar Access</h2>
+      <p>
+        The app requests the Google Calendar Events permission:
+        <code>https://www.googleapis.com/auth/calendar.events</code>.
+        This permission is used only to work with the user's calendar events.
+      </p>
+      <p>
+        The app does not request access to calendar sharing settings, calendar ACLs, or calendar settings.
+      </p>
+    </section>
+
+    <section>
+      <h2>Support</h2>
+      <p>
+        For support or data access questions, contact the app owner at the support email listed on the
+        Google OAuth consent screen.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Copyright 2026 Google Calendar Whisper.</p>
+  </footer>
+</body>
+</html>

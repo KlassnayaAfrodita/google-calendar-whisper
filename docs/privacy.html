@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy - Google Calendar Whisper</title>
+  <meta name="description" content="Privacy Policy for Google Calendar Whisper.">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5ef;
+      --text: #1e2428;
+      --muted: #58646b;
+      --line: #d9d2c4;
+      --accent: #006d77;
+      --panel: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header, main, footer {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    header { padding: 44px 0 22px; }
+    nav {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+      font-size: 15px;
+    }
+    a { color: var(--accent); }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+    .updated { color: var(--muted); }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin: 22px 0;
+    }
+    h2 { margin: 0 0 12px; font-size: 24px; }
+    ul { margin: 12px 0 0; padding-left: 22px; }
+    code {
+      background: #eef3f1;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    footer {
+      padding: 28px 0 56px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav aria-label="Site navigation">
+      <a href="./">Home</a>
+      <a href="./privacy.html">Privacy Policy</a>
+      <a href="./terms.html">Terms of Service</a>
+    </nav>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: August 10, 2026</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Overview</h2>
+      <p>
+        Google Calendar Whisper is a Telegram bot that helps users manage Google Calendar events.
+        This Privacy Policy explains what data the app accesses and how that data is used.
+      </p>
+    </section>
+
+    <section>
+      <h2>Data We Access</h2>
+      <p>The app may access or store the following data:</p>
+      <ul>
+        <li>Telegram chat ID and Telegram username, when available.</li>
+        <li>Google OAuth tokens needed to connect to Google Calendar.</li>
+        <li>Google Calendar event data needed to answer user commands, including event titles, times, dates, locations, descriptions, and event IDs.</li>
+        <li>User messages sent to the Telegram bot for calendar-related commands.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Google Calendar Permission</h2>
+      <p>
+        The app uses <code>https://www.googleapis.com/auth/calendar.events</code> so users can create,
+        view, update, and delete their own Google Calendar events through Telegram commands.
+      </p>
+      <p>
+        The app does not use Google Calendar data for advertising, does not sell Google user data,
+        and does not share Google Calendar data with third parties except as needed to provide the
+        requested bot functionality.
+      </p>
+    </section>
+
+    <section>
+      <h2>How We Use Data</h2>
+      <ul>
+        <li>To authenticate the user's Google Calendar connection.</li>
+        <li>To create, read, update, or delete calendar events requested by the user.</li>
+        <li>To show schedules and send reminder messages requested or enabled by the user.</li>
+        <li>To operate, debug, and secure the service.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Data Retention And Revocation</h2>
+      <p>
+        OAuth tokens are stored while the user remains connected to the bot. A user can revoke the
+        app's access at any time from their Google Account permissions page. After access is revoked,
+        the bot will no longer be able to access Google Calendar for that user.
+      </p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>
+        For privacy questions or data deletion requests, contact the app owner at the support email
+        listed on the Google OAuth consent screen.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Copyright 2026 Google Calendar Whisper.</p>
+  </footer>
+</body>
+</html>
