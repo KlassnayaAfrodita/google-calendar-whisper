@@ -15,7 +15,7 @@ def _credentials(expiry):
     credentials.refresh_token = "refresh-token"
     credentials.token_uri = "https://oauth2.googleapis.com/token"
     credentials.expiry = expiry
-    credentials.scopes = ["https://www.googleapis.com/auth/calendar"]
+    credentials.scopes = ["https://www.googleapis.com/auth/calendar.events"]
     return credentials
 
 

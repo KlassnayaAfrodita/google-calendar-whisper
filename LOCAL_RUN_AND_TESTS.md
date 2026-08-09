@@ -294,13 +294,12 @@ OAuth mode=local — HTTPS-сервер не нужен. Бот работает
 В коде (`app/calendar/auth.py`) запрашивается scope:
 
 ```
-https://www.googleapis.com/auth/calendar
+https://www.googleapis.com/auth/calendar.events
 ```
 
-Это **полный доступ на чтение и запись** к вашему Google Calendar. Бот может:
+Это доступ на чтение и запись **событий** в вашем Google Calendar. Бот может:
 - ✅ создавать, изменять, удалять события
 - ✅ читать ваше расписание
-- ✅ видеть все ваши календари
 
 Бот **НЕ** получает доступ к почте, дискам, контактам — только Calendar.
 
@@ -347,8 +346,8 @@ https://www.googleapis.com/auth/calendar
 
 5. **Страница Scopes (области доступа):**
    - Нажмите **Add or Remove Scopes**
-   - Вручную добавьте: `https://www.googleapis.com/auth/calendar`
-     (или найдите в списке «Google Calendar API» → выберите `.../auth/calendar`)
+   - Вручную добавьте: `https://www.googleapis.com/auth/calendar.events`
+     (или найдите в списке «Google Calendar API» → выберите `.../auth/calendar.events`)
    - Нажмите **Update** → **Save and Continue**
 
 6. **Страница Test users (тестовые пользователи):**
@@ -472,7 +471,7 @@ GOOGLE_REDIRECT_URI=http://localhost
     /help — справка
     ```
 
-🏆 **Готово!** Токен сохранён в `bot.db`. Бот теперь имеет полный доступ к вашему Google Calendar и может обновлять токен автоматически.
+🏆 **Готово!** Токен сохранён в `bot.db`. Бот теперь имеет доступ к событиям Google Calendar и может обновлять токен автоматически.
 
 ---
 

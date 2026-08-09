@@ -37,7 +37,7 @@ from app.models import OAuthToken, User
 
 logger = logging.getLogger(__name__)
 
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
+SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def build_oauth_flow(redirect_uri: str | None = None) -> Flow:
