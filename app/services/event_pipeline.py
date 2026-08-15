@@ -27,6 +27,7 @@ from app.telegram.keyboards import (
     confirm_create_conflict_keyboard,
     quick_actions_keyboard,
 )
+from app.utils.date_resolver import resolve_russian_weekday_date
 from app.utils.formatters import escape, format_agenda
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ async def process_instruction(
 
     intent = event_details.intent
     event_data = event_details.model_dump()
+    _apply_weekday_date_guardrail(event_data, intent, text, timezone)
 
     if intent == "create_event":
         await _handle_create(update, chat_id, creds, event_data, calendar, timezone, heard)
@@ -81,6 +83,36 @@ async def process_instruction(
         await update.message.reply_text(
             f"🤔 {msg}" + heard,
             parse_mode="HTML",
+        )
+
+
+def _apply_weekday_date_guardrail(
+    event_data: dict,
+    intent: str,
+    text: str,
+    timezone: str,
+) -> None:
+    tz = ZoneInfo(timezone)
+    resolved_date = resolve_russian_weekday_date(text, datetime.now(tz))
+    if not resolved_date:
+        return
+
+    if intent == "create_event":
+        previous_date = event_data.get("date", "")
+        event_data["date"] = resolved_date
+    elif intent == "update_event":
+        previous_date = event_data.get("new_date", "")
+        event_data["new_date"] = resolved_date
+    else:
+        return
+
+    if previous_date != resolved_date:
+        logger.info(
+            "Corrected LLM weekday date: intent=%s previous=%s resolved=%s text=%r",
+            intent,
+            previous_date,
+            resolved_date,
+            text,
         )
 
 
