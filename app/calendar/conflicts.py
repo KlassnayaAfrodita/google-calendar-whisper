@@ -64,8 +64,6 @@ async def find_conflicts(
         credentials,
         day_start.isoformat(),
         day_end.isoformat(),
-        user_id=user_id,
-        purpose="conflicts",
     )
 
     conflicts: list[CalendarEvent] = []

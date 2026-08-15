@@ -392,4 +392,4 @@ async def get_upcoming_events(
     now = datetime.now(timezone.utc)
     time_min = now.isoformat()
     time_max = (now + timedelta(days=days)).isoformat()
-    return await get_events(credentials, time_min, time_max, user_id=user_id, purpose="context")
+    return await get_events(credentials, time_min, time_max)
