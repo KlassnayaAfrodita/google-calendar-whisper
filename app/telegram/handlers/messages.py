@@ -5,13 +5,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import tempfile
 from pathlib import Path
 
 from telegram import Update
+from telegram.error import TimedOut
 from telegram.ext import ContextTypes
 
+from app.config import settings
 from app.calendar.auth import has_valid_google_auth
 from app.speech.transcription import transcribe_audio
 from app.services.event_pipeline import process_instruction
@@ -77,24 +80,19 @@ async def _process_voice(
     """Скачать и транскрибировать голосовое сообщение. Возвращает текст или None."""
     chat_id = update.effective_chat.id
     voice = update.message.voice
+    tmp_path: str | None = None
 
     try:
-        file = await voice.get_file()
+        file = await _telegram_retry(voice.get_file)
 
         # Скачиваем во временный файл
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
             tmp_path = tmp.name
 
-        await file.download_to_drive(tmp_path)
+        await _telegram_retry(file.download_to_drive, tmp_path)
 
         # Транскрибируем
         result = await transcribe_audio(tmp_path)
-
-        # Удаляем временный файл
-        try:
-            Path(tmp_path).unlink(missing_ok=True)
-        except OSError:
-            pass
 
         if not result.success:
             await update.message.reply_text(
@@ -113,3 +111,20 @@ async def _process_voice(
             parse_mode="HTML",
         )
         return None
+    finally:
+        if tmp_path is not None:
+            try:
+                Path(tmp_path).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+async def _telegram_retry(func, *args):
+    attempts = max(1, settings.telegram_voice_download_retries)
+    for attempt in range(1, attempts + 1):
+        try:
+            return await func(*args)
+        except TimedOut:
+            if attempt == attempts:
+                raise
+            await asyncio.sleep(attempt)

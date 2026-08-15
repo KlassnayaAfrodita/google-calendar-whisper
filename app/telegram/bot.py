@@ -33,6 +33,12 @@ def build_application() -> Application:
     app = (
         Application.builder()
         .token(settings.bot_token)
+        .connect_timeout(settings.telegram_connect_timeout)
+        .read_timeout(settings.telegram_read_timeout)
+        .write_timeout(settings.telegram_write_timeout)
+        .pool_timeout(settings.telegram_pool_timeout)
+        .get_updates_connect_timeout(settings.telegram_connect_timeout)
+        .get_updates_read_timeout(settings.telegram_read_timeout)
         .build()
     )
 

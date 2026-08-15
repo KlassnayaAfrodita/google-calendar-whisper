@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # HTTP-сервер. В production HTTPS завершается на reverse proxy хостинга.
     webhook_host: str = "0.0.0.0"
     port: int = 8000
+    telegram_connect_timeout: float = 20.0
+    telegram_read_timeout: float = 60.0
+    telegram_write_timeout: float = 60.0
+    telegram_pool_timeout: float = 20.0
+    telegram_voice_download_retries: int = 3
     # Устаревшее имя оставлено для совместимости со старыми .env.
     webhook_port: int | None = None
     ssl_cert_path: str = ""
