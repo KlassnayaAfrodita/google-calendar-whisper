@@ -221,6 +221,52 @@ class TestGetEvents:
         assert events[0].id == "evt001"
         assert events[0].title == "Стендап"
 
+    @pytest.mark.asyncio
+    @patch("app.calendar.service._get_service")
+    async def test_get_events_from_multiple_calendars(self, mock_build, mock_google_service):
+        """Events are read from each selected calendar and sorted together."""
+        mock_build.return_value = mock_google_service
+
+        def list_events(**kwargs):
+            calendar_id = kwargs["calendarId"]
+            execute_mock = MagicMock()
+            if calendar_id == "primary":
+                execute_mock.execute.return_value = {
+                    "items": [
+                        {
+                            "id": "primary_evt",
+                            "summary": "Primary",
+                            "start": {"dateTime": "2026-07-04T12:00:00"},
+                            "end": {"dateTime": "2026-07-04T13:00:00"},
+                        }
+                    ]
+                }
+            else:
+                execute_mock.execute.return_value = {
+                    "items": [
+                        {
+                            "id": "work_evt",
+                            "summary": "Work",
+                            "start": {"dateTime": "2026-07-04T09:00:00"},
+                            "end": {"dateTime": "2026-07-04T10:00:00"},
+                        }
+                    ]
+                }
+            return execute_mock
+
+        mock_google_service.events().list.side_effect = list_events
+
+        events = await get_events(
+            _mock_credentials(),
+            "2026-07-04T00:00:00Z",
+            "2026-07-05T00:00:00Z",
+            calendar_ids=["primary", "work@example.com"],
+        )
+
+        assert [event.id for event in events] == ["work_evt", "primary_evt"]
+        assert events[0].calendar_id == "work@example.com"
+        assert events[1].calendar_id == "primary"
+
 
 class TestGetEventTitle:
     @pytest.mark.asyncio

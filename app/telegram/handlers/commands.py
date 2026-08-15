@@ -12,12 +12,14 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from app.calendar.auth import get_auth_url, has_valid_google_auth
+from app.calendar.auth import get_credentials_for_user
+from app.calendar.calendars import list_saved_calendars, resolve_internal_user_id, sync_google_calendars
 from app.config import settings
 from app.db.session import async_session_factory
 from app.models import User
 from app.services.guided_flow import start_create_flow, start_delete_flow, start_update_flow
 from app.state.conversation import clear_state
-from app.utils.formatters import help_text
+from app.utils.formatters import escape, help_text
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +180,45 @@ async def cmd_reconnect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         parse_mode="HTML",
         disable_web_page_preview=True,
     )
+
+
+async def cmd_calendars(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Команда /calendars — обновить и показать календари аккаунта."""
+    chat_id = update.effective_chat.id
+    await _ensure_user(chat_id, update.effective_user.username if update.effective_user else None)
+
+    creds = await get_credentials_for_user(chat_id)
+    if not creds:
+        await update.message.reply_text(
+            "⚠️ Сначала подключите Google Calendar: /start",
+            parse_mode="HTML",
+        )
+        return
+
+    user_id = await resolve_internal_user_id(chat_id)
+    if user_id is None:
+        await update.message.reply_text("❌ Пользователь не найден. Отправьте /start.", parse_mode="HTML")
+        return
+
+    synced_count = await sync_google_calendars(user_id, creds)
+    calendars = await list_saved_calendars(user_id)
+
+    if not calendars:
+        await update.message.reply_text(
+            "📭 Календари не найдены. Попробуйте /reconnect.",
+            parse_mode="HTML",
+        )
+        return
+
+    lines = [f"📅 <b>Календари Google</b>\nОбновлено: {synced_count}"]
+    for calendar in calendars:
+        if calendar.is_deleted or calendar.is_hidden:
+            continue
+        marker = "✅" if calendar.selected_for_reminders else "☑️"
+        primary = " · основной" if calendar.is_primary else ""
+        lines.append(f"{marker} {escape(calendar.summary)}{primary}")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
 async def handle_oauth_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:

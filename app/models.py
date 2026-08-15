@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -36,6 +36,9 @@ class User(Base):
     oauth_token: Mapped["OAuthToken | None"] = relationship(
         "OAuthToken", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    calendars: Mapped[list["GoogleCalendar"]] = relationship(
+        "GoogleCalendar", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class OAuthToken(Base):
@@ -59,3 +62,33 @@ class OAuthToken(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="oauth_token")
+
+
+class GoogleCalendar(Base):
+    """Calendar selected from the connected user's Google Calendar list."""
+
+    __tablename__ = "google_calendars"
+    __table_args__ = (
+        UniqueConstraint("user_id", "calendar_id", name="uq_google_calendar_user_calendar"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True)
+
+    calendar_id: Mapped[str] = mapped_column(String(500))
+    summary: Mapped[str] = mapped_column(String(500), default="")
+    access_role: Mapped[str] = mapped_column(String(50), default="")
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    selected_for_reminders: Mapped[bool] = mapped_column(Boolean, default=True)
+    selected_for_conflicts: Mapped[bool] = mapped_column(Boolean, default=True)
+    selected_for_context: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="calendars")

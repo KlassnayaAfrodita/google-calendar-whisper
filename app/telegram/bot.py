@@ -14,6 +14,7 @@ from app.config import settings
 from app.telegram.handlers.callbacks import handle_callback
 from app.telegram.handlers.commands import (
     cmd_cancel,
+    cmd_calendars,
     cmd_create,
     cmd_delete,
     cmd_help,
@@ -51,6 +52,7 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("delete", cmd_delete))
     app.add_handler(CommandHandler("today", cmd_today))
     app.add_handler(CommandHandler("week", cmd_week))
+    app.add_handler(CommandHandler("calendars", cmd_calendars))
     app.add_handler(CommandHandler("reconnect", cmd_reconnect))
 
     # Callback queries (inline-кнопки)
