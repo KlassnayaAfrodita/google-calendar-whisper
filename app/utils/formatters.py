@@ -75,6 +75,17 @@ def fmt_event_line(event: CalendarEvent, tz: ZoneInfo) -> str:
     return f"🕒 {time_str}  <b>{escape(event.title)}</b>{loc}"
 
 
+def _calendar_label(event: CalendarEvent) -> str:
+    return event.calendar_name or event.calendar_id or "Календарь"
+
+
+def _group_by_calendar(events: list[CalendarEvent]) -> dict[str, list[CalendarEvent]]:
+    by_calendar: dict[str, list[CalendarEvent]] = {}
+    for event in events:
+        by_calendar.setdefault(_calendar_label(event), []).append(event)
+    return by_calendar
+
+
 # ---------------------------------------------------------------------------
 # Форматирование конфликтов
 # ---------------------------------------------------------------------------
@@ -142,8 +153,10 @@ def format_agenda(
             return header + "\n\nНичего не запланировано. 🎉"
 
         msg = header + "\n"
-        for event in events:
-            msg += "\n" + fmt_event_line(event, tz)
+        for calendar_name, calendar_events in _group_by_calendar(events).items():
+            msg += f"\n\n<b>{escape(calendar_name)}</b>"
+            for event in calendar_events:
+                msg += "\n" + fmt_event_line(event, tz)
         return msg
 
     # week
@@ -164,8 +177,10 @@ def format_agenda(
             msg += f"\n<b>{day_dt.strftime('%a %d %b')}</b>\n"
         except ValueError:
             msg += f"\n<b>{day}</b>\n"
-        for event in day_events:
-            msg += fmt_event_line(event, tz) + "\n"
+        for calendar_name, calendar_events in _group_by_calendar(day_events).items():
+            msg += f"<i>{escape(calendar_name)}</i>\n"
+            for event in calendar_events:
+                msg += fmt_event_line(event, tz) + "\n"
 
     return msg.rstrip()
 
@@ -186,7 +201,10 @@ def format_daily_reminder(events: list[CalendarEvent], timezone: str) -> str:
         return header + "\n\nНичего не запланировано. 🎉"
 
     lines: list[str] = [header]
-    for event in events:
-        lines.append(fmt_event_line(event, tz))
+    for calendar_name, calendar_events in _group_by_calendar(events).items():
+        lines.append("")
+        lines.append(f"<b>{escape(calendar_name)}</b>")
+        for event in calendar_events:
+            lines.append(fmt_event_line(event, tz))
 
     return "\n".join(lines)

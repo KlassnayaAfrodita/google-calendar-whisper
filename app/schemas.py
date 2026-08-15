@@ -64,6 +64,7 @@ class CalendarEvent(BaseModel):
     end: str
     location: str = ""
     calendar_id: str = ""
+    calendar_name: str = ""
 
 
 class CreateResult(BaseModel):

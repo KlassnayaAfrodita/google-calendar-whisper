@@ -336,11 +336,14 @@ async def get_events(
     try:
         if calendar_ids is None:
             if user_id is None:
-                calendar_ids = [settings.google_calendar_id]
+                calendar_map = {settings.google_calendar_id: settings.google_calendar_id}
             else:
-                from app.calendar.calendars import get_selected_calendar_ids
+                from app.calendar.calendars import get_selected_calendar_map
 
-                calendar_ids = await get_selected_calendar_ids(user_id, purpose)  # type: ignore[arg-type]
+                calendar_map = await get_selected_calendar_map(user_id, purpose)  # type: ignore[arg-type]
+            calendar_ids = list(calendar_map.keys())
+        else:
+            calendar_map = {calendar_id: calendar_id for calendar_id in calendar_ids}
 
         events: list[CalendarEvent] = []
         for calendar_id in calendar_ids:
@@ -366,6 +369,7 @@ async def get_events(
                         end=end,
                         location=item.get("location") or "",
                         calendar_id=calendar_id,
+                        calendar_name=calendar_map.get(calendar_id, calendar_id),
                     )
                 )
         events.sort(key=lambda event: event.start)

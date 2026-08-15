@@ -103,12 +103,21 @@ async def get_selected_calendar_ids(
     purpose: CalendarPurpose,
 ) -> list[str]:
     """Return calendar ids enabled for the requested purpose."""
+    calendar_map = await get_selected_calendar_map(user_id_or_chat_id, purpose)
+    return list(calendar_map.keys())
+
+
+async def get_selected_calendar_map(
+    user_id_or_chat_id: int | None,
+    purpose: CalendarPurpose,
+) -> dict[str, str]:
+    """Return enabled calendar ids mapped to their display names."""
     if user_id_or_chat_id is None:
-        return [settings.google_calendar_id]
+        return {settings.google_calendar_id: settings.google_calendar_id}
 
     user_id = await resolve_internal_user_id(user_id_or_chat_id)
     if user_id is None:
-        return [settings.google_calendar_id]
+        return {settings.google_calendar_id: settings.google_calendar_id}
 
     column = {
         "reminders": GoogleCalendar.selected_for_reminders,
@@ -118,17 +127,24 @@ async def get_selected_calendar_ids(
 
     async with async_session_factory() as session:
         result = await session.execute(
-            select(GoogleCalendar.calendar_id)
+            select(GoogleCalendar.calendar_id, GoogleCalendar.summary)
             .where(GoogleCalendar.user_id == user_id)
             .where(GoogleCalendar.is_deleted == False)  # noqa: E712
             .where(GoogleCalendar.is_hidden == False)  # noqa: E712
             .where(column == True)  # noqa: E712
         )
-        calendar_ids = list(result.scalars().all())
+        rows = result.all()
 
-    if settings.google_calendar_id not in calendar_ids:
-        calendar_ids.insert(0, settings.google_calendar_id)
-    return calendar_ids
+    calendar_map = {
+        calendar_id: summary or calendar_id
+        for calendar_id, summary in rows
+    }
+    if settings.google_calendar_id not in calendar_map:
+        calendar_map = {
+            settings.google_calendar_id: settings.google_calendar_id,
+            **calendar_map,
+        }
+    return calendar_map
 
 
 async def list_saved_calendars(user_id_or_chat_id: int) -> list[GoogleCalendar]:
