@@ -10,6 +10,7 @@ import pytest
 from app.calendar.service import valid_date, valid_time
 from app.calendar.conflicts import find_conflicts
 from app.schemas import CalendarEvent
+from app.utils.date_resolver import resolve_russian_weekday_date
 
 
 class TestDateValidation:
@@ -74,6 +75,33 @@ class TestRruleParsing:
     def test_rrule_with_until(self):
         rule = "RRULE:FREQ=WEEKLY;BYDAY=MO;UNTIL=20260630T235959Z"
         assert "UNTIL=20260630T235959Z" in rule
+
+
+class TestRussianWeekdayDateResolver:
+    """Regression tests for Russian weekday phrases."""
+
+    def test_nearest_thursday_from_saturday(self):
+        now = datetime(2026, 8, 15, 10, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+        text = "Поставь встречу на ближайший четверг с 12 до 2"
+
+        assert resolve_russian_weekday_date(text, now) == "2026-08-20"
+
+    def test_plain_thursday_from_saturday(self):
+        now = datetime(2026, 8, 15, 10, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+        text = "Поздравить Наташу в четверг"
+
+        assert resolve_russian_weekday_date(text, now) == "2026-08-20"
+
+    def test_next_thursday_on_thursday_means_next_week(self):
+        now = datetime(2026, 8, 20, 10, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+        text = "Перенеси на следующий четверг"
+
+        assert resolve_russian_weekday_date(text, now) == "2026-08-27"
+
+    def test_no_weekday_returns_none(self):
+        now = datetime(2026, 8, 15, 10, 0, tzinfo=ZoneInfo("Europe/Moscow"))
+
+        assert resolve_russian_weekday_date("Поставь встречу завтра", now) is None
 
 
 class TestConflictDetection:

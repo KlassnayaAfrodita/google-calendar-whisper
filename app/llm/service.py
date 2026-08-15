@@ -20,6 +20,7 @@ from app.llm.prompts import (
     build_event_details_prompt,
 )
 from app.schemas import CalendarEvent, DateTimeChange, EventDetails
+from app.utils.date_resolver import resolve_russian_weekday_date
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,14 @@ async def extract_event_details(
 
         content = response.choices[0].message.content or ""
         data = json.loads(content)
-        return EventDetails.model_validate(data)
+        event = EventDetails.model_validate(data)
+        resolved_date = resolve_russian_weekday_date(text, now)
+        if resolved_date:
+            if event.intent == "create_event":
+                event.date = resolved_date
+            elif event.intent == "update_event":
+                event.new_date = resolved_date
+        return event
 
     except (json.JSONDecodeError, KeyError, ValueError) as exc:
         logger.warning("LLM вернул невалидный JSON: %s", exc)
@@ -109,7 +117,11 @@ async def parse_datetime_change(
 
         content = response.choices[0].message.content or "{}"
         data = json.loads(content)
-        return DateTimeChange.model_validate(data)
+        change = DateTimeChange.model_validate(data)
+        resolved_date = resolve_russian_weekday_date(text, now)
+        if resolved_date:
+            change.new_date = resolved_date
+        return change
 
     except (json.JSONDecodeError, KeyError, ValueError) as exc:
         logger.warning("LLM вернул невалидный JSON (datetime change): %s", exc)
