@@ -63,6 +63,7 @@ class CalendarEvent(BaseModel):
     start: str  # ISO datetime или date string
     end: str
     location: str = ""
+    calendar_id: str = ""
 
 
 class CreateResult(BaseModel):

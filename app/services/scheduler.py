@@ -64,7 +64,13 @@ async def _send_daily_reminders() -> None:
             time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
             time_max = now.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
 
-            events = await get_events(creds, time_min, time_max)
+            events = await get_events(
+                creds,
+                time_min,
+                time_max,
+                user_id=user.id,
+                purpose="reminders",
+            )
             text = format_daily_reminder(events, timezone)
 
             await bot.send_message(

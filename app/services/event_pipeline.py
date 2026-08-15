@@ -54,7 +54,7 @@ async def process_instruction(
     timezone = await _get_user_timezone(chat_id)
 
     # Получаем предстоящие события для контекста LLM
-    calendar = await get_upcoming_events(creds)
+    calendar = await get_upcoming_events(creds, user_id=chat_id)
 
     # Разбираем команду через LLM
     event_details = await extract_event_details(text, calendar, timezone)
@@ -129,7 +129,7 @@ async def _handle_create(
     from app.utils.formatters import conflict_text
 
     # Проверяем конфликты
-    conflicts = await find_conflicts(creds, event_data, timezone)
+    conflicts = await find_conflicts(creds, event_data, timezone, user_id=chat_id)
 
     if conflicts:
         tz = ZoneInfo(timezone)
@@ -243,7 +243,7 @@ async def send_agenda(update: Update, chat_id: int, scope: str) -> None:
         time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
         time_max = (now + timedelta(days=7)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
 
-    events = await get_events(creds, time_min, time_max)
+    events = await get_events(creds, time_min, time_max, user_id=chat_id, purpose="reminders")
     text = format_agenda(events, scope, timezone)
 
     await update.message.reply_text(text, parse_mode="HTML")

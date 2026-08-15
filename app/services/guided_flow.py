@@ -170,7 +170,7 @@ async def _build_create_preview(
     if not creds:
         return "⚠️ Токен Google истёк. Отправьте /reconnect.", None
 
-    calendar = await get_upcoming_events(creds)
+    calendar = await get_upcoming_events(creds, user_id=chat_id)
     event_details = await extract_event_details(instruction, calendar, timezone)
 
     if event_details is None:
@@ -197,7 +197,7 @@ async def _build_create_preview(
         extra += "\n🔁 Повторяющееся"
 
     # Проверяем конфликты
-    conflicts = await find_conflicts(creds, event, timezone)
+    conflicts = await find_conflicts(creds, event, timezone, user_id=chat_id)
     if conflicts:
         tz = ZoneInfo(timezone)
         from app.utils.formatters import conflict_text
@@ -243,7 +243,7 @@ async def _start_pick_flow(update: Update, chat_id: int, flow: str) -> None:
         return
 
     timezone = await _get_user_timezone(chat_id)
-    events = await get_upcoming_events(creds)
+    events = await get_upcoming_events(creds, user_id=chat_id)
 
     if not events:
         await update.message.reply_text(

@@ -34,6 +34,7 @@ from app.calendar.auth import (
 from app.config import settings
 from app.db.session import async_session_factory, init_db
 from app.models import User
+from app.calendar.calendars import sync_google_calendars
 from app.services.scheduler import build_scheduler
 
 logger = logging.getLogger(__name__)
@@ -223,10 +224,11 @@ async def oauth_callback(
     # Сохраняем токен
     token = build_token_from_credentials(credentials)
     await save_token_for_user(user.id, token)
+    synced_count = await sync_google_calendars(user.id, credentials)
     print(f"OAuth callback token saved: user_id={user.id} chat_id={chat_id}", flush=True)
 
     # Уведомляем пользователя через бота
-    await _notify_user(chat_id, "✅ Google Calendar успешно подключён!\n\nТеперь вы можете отправлять мне голосовые и текстовые команды для управления вашим календарём.\n\n/help — справка.")
+    await _notify_user(chat_id, f"✅ Google Calendar успешно подключён!\n\nНайдено календарей: {synced_count}.\nТеперь вы можете отправлять мне голосовые и текстовые команды для управления вашим календарём.\n\n/help — справка.")
 
     return HTMLResponse(
         content=(
@@ -296,9 +298,11 @@ async def oauth_local(code: str, state_nonce: str, chat_id_from_chat: int) -> st
     # Сохраняем токен
     token = build_token_from_credentials(credentials)
     await save_token_for_user(user.id, token)
+    synced_count = await sync_google_calendars(user.id, credentials)
 
     return (
         "✅ Google Calendar успешно подключён!\n\n"
+        f"Найдено календарей: {synced_count}.\n\n"
         "Теперь вы можете отправлять мне голосовые и текстовые команды.\n\n"
         "/help — справка"
     )

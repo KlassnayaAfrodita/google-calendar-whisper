@@ -25,7 +25,6 @@ from zoneinfo import ZoneInfo
 
 from google.auth.credentials import Credentials
 from googleapiclient.discovery import build
-
 from app.config import settings
 from app.schemas import CalendarEvent, CreateResult, DeleteResult, UpdateResult
 
@@ -111,13 +110,14 @@ def _list_events_sync(
     credentials: Credentials,
     time_min: str,
     time_max: str,
+    calendar_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Синхронный список событий. Выполняется в потоке."""
     service = _get_service(credentials)
     return (
         service.events()
         .list(
-            calendarId=settings.google_calendar_id,
+            calendarId=calendar_id or settings.google_calendar_id,
             timeMin=time_min,
             timeMax=time_max,
             singleEvents=True,
@@ -325,29 +325,50 @@ async def get_events(
     credentials: Credentials,
     time_min: str,
     time_max: str,
+    user_id: int | None = None,
+    calendar_ids: list[str] | None = None,
+    purpose: str = "reminders",
 ) -> list[CalendarEvent]:
     """Получить список событий за период.
 
     Аналог PHP getCalendarEvents().
     """
     try:
-        result = await asyncio.to_thread(
-            _list_events_sync, credentials, time_min, time_max
-        )
+        if calendar_ids is None:
+            if user_id is None:
+                calendar_ids = [settings.google_calendar_id]
+            else:
+                from app.calendar.calendars import get_selected_calendar_ids
+
+                calendar_ids = await get_selected_calendar_ids(user_id, purpose)  # type: ignore[arg-type]
 
         events: list[CalendarEvent] = []
-        for item in result.get("items", []):
-            start = item["start"].get("dateTime") or item["start"].get("date", "")
-            end = item["end"].get("dateTime") or item["end"].get("date", "")
-            events.append(
-                CalendarEvent(
-                    id=item["id"],
-                    title=item.get("summary") or "(без названия)",
-                    start=start,
-                    end=end,
-                    location=item.get("location") or "",
+        for calendar_id in calendar_ids:
+            try:
+                result = await asyncio.to_thread(
+                    _list_events_sync, credentials, time_min, time_max, calendar_id
                 )
-            )
+            except Exception:
+                logger.exception(
+                    "Ошибка получения событий из Google Calendar: calendar_id=%s",
+                    calendar_id,
+                )
+                continue
+
+            for item in result.get("items", []):
+                start = item["start"].get("dateTime") or item["start"].get("date", "")
+                end = item["end"].get("dateTime") or item["end"].get("date", "")
+                events.append(
+                    CalendarEvent(
+                        id=item["id"],
+                        title=item.get("summary") or "(без названия)",
+                        start=start,
+                        end=end,
+                        location=item.get("location") or "",
+                        calendar_id=calendar_id,
+                    )
+                )
+        events.sort(key=lambda event: event.start)
         return events
 
     except Exception:
@@ -358,6 +379,7 @@ async def get_events(
 async def get_upcoming_events(
     credentials: Credentials,
     days: int = 30,
+    user_id: int | None = None,
 ) -> list[CalendarEvent]:
     """Получить предстоящие события (по умолчанию за 30 дней).
 
@@ -366,4 +388,4 @@ async def get_upcoming_events(
     now = datetime.now(timezone.utc)
     time_min = now.isoformat()
     time_max = (now + timedelta(days=days)).isoformat()
-    return await get_events(credentials, time_min, time_max)
+    return await get_events(credentials, time_min, time_max, user_id=user_id, purpose="context")

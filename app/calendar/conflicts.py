@@ -19,6 +19,7 @@ async def find_conflicts(
     credentials: Credentials,
     event_data: dict[str, Any],
     timezone: str = "Europe/Moscow",
+    user_id: int | None = None,
 ) -> list[CalendarEvent]:
     """Найти события, пересекающиеся с создаваемым.
 
@@ -63,6 +64,8 @@ async def find_conflicts(
         credentials,
         day_start.isoformat(),
         day_end.isoformat(),
+        user_id=user_id,
+        purpose="conflicts",
     )
 
     conflicts: list[CalendarEvent] = []
