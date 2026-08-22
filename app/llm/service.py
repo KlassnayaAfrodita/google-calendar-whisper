@@ -69,6 +69,20 @@ async def extract_event_details(
         content = response.choices[0].message.content or ""
         data = json.loads(content)
         event = EventDetails.model_validate(data)
+
+        # Последняя защита перед изменением календаря: ID должен присутствовать
+        # в переданном модели списке, а не быть придуманным моделью.
+        if event.intent in {"update_event", "delete_event"}:
+            known_ids = {calendar_event.id for calendar_event in calendar}
+            if not event.target_event_id or event.target_event_id not in known_ids:
+                logger.warning(
+                    "LLM выбрала неизвестную цель: intent=%s target_event_id=%s",
+                    event.intent,
+                    event.target_event_id,
+                )
+                event.intent = "unknown"
+                event.message = "Не удалось однозначно определить событие для изменения."
+
         resolved_date = resolve_russian_weekday_date(text, now)
         if resolved_date:
             if event.intent == "create_event":

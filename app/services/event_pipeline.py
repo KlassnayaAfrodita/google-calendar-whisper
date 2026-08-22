@@ -29,6 +29,7 @@ from app.telegram.keyboards import (
 )
 from app.utils.date_resolver import resolve_russian_weekday_date
 from app.utils.formatters import escape, format_agenda
+from app.utils.intent_guardrails import is_explicit_create_instruction
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,10 @@ async def process_instruction(
     calendar = await get_upcoming_events(creds)
 
     # Разбираем команду через LLM
-    event_details = await extract_event_details(text, calendar, timezone)
+    # Явная команда создания не должна сопоставляться с существующим событием.
+    # «Напомни позвонить в 14:00» — новое напоминание, а не перенос встречи.
+    parser_calendar = [] if is_explicit_create_instruction(text) else calendar
+    event_details = await extract_event_details(text, parser_calendar, timezone)
 
     heard = f"\n\n📝 Услышано: «{text}»" if is_voice else ""
 
