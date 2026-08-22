@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -16,7 +16,7 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from app.calendar.auth import get_credentials_for_user
-from app.calendar.service import get_events
+from app.calendar.service import filter_events_for_day, get_events
 from app.config import settings
 from app.db.session import async_session_factory
 from app.models import User
@@ -62,9 +62,13 @@ async def _send_daily_reminders() -> None:
             now = datetime.now(tz)
 
             time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-            time_max = now.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
+            time_max = (
+                now.replace(hour=0, minute=0, second=0, microsecond=0)
+                + timedelta(days=1)
+            ).isoformat()
 
             events = await get_events(creds, time_min, time_max)
+            events = filter_events_for_day(events, now.date(), timezone)
             text = format_daily_reminder(events, timezone)
 
             await bot.send_message(

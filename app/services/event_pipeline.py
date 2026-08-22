@@ -234,16 +234,21 @@ async def send_agenda(update: Update, chat_id: int, scope: str) -> None:
     tz = ZoneInfo(timezone)
     now = datetime.now(tz)
 
-    from app.calendar.service import get_events
+    from app.calendar.service import filter_events_for_day, get_events
 
     if scope == "today":
         time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        time_max = now.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
+        time_max = (
+            now.replace(hour=0, minute=0, second=0, microsecond=0)
+            + timedelta(days=1)
+        ).isoformat()
     else:
         time_min = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
         time_max = (now + timedelta(days=7)).replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
 
     events = await get_events(creds, time_min, time_max)
+    if scope == "today":
+        events = filter_events_for_day(events, now.date(), timezone)
     text = format_agenda(events, scope, timezone)
 
     await update.message.reply_text(text, parse_mode="HTML")

@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -353,6 +353,43 @@ async def get_events(
     except Exception:
         logger.exception("Ошибка получения событий из Google Calendar")
         return []
+
+
+def filter_events_for_day(
+    events: list[CalendarEvent],
+    day: date,
+    timezone_name: str,
+) -> list[CalendarEvent]:
+    """Оставить события, которые действительно пересекают указанный локальный день.
+
+    Google Calendar хранит ``end.date`` all-day события как исключающую границу.
+    Явная проверка защищает дневную повестку от пограничного события предыдущего дня.
+    """
+    tz = ZoneInfo(timezone_name)
+    day_start = datetime.combine(day, time.min, tzinfo=tz)
+    day_end = day_start + timedelta(days=1)
+    filtered: list[CalendarEvent] = []
+
+    for event in events:
+        try:
+            if len(event.start) == 10:
+                start_day = date.fromisoformat(event.start)
+                end_day = date.fromisoformat(event.end)
+                if start_day <= day < end_day:
+                    filtered.append(event)
+                continue
+
+            start = datetime.fromisoformat(event.start)
+            end = datetime.fromisoformat(event.end)
+            start = start.replace(tzinfo=tz) if start.tzinfo is None else start.astimezone(tz)
+            end = end.replace(tzinfo=tz) if end.tzinfo is None else end.astimezone(tz)
+
+            if start < day_end and end > day_start:
+                filtered.append(event)
+        except (TypeError, ValueError):
+            logger.warning("Некорректные даты события id=%s", event.id)
+
+    return filtered
 
 
 async def get_upcoming_events(

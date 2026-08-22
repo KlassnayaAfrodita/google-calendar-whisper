@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,6 +10,7 @@ import pytest
 from app.calendar.service import (
     create_event,
     delete_event,
+    filter_events_for_day,
     get_event_title,
     get_events,
     get_upcoming_events,
@@ -17,7 +18,7 @@ from app.calendar.service import (
     valid_date,
     valid_time,
 )
-from app.schemas import CreateResult, DeleteResult, UpdateResult
+from app.schemas import CalendarEvent, CreateResult, DeleteResult, UpdateResult
 
 
 def _mock_credentials():
@@ -220,6 +221,38 @@ class TestGetEvents:
         assert len(events) == 1
         assert events[0].id == "evt001"
         assert events[0].title == "Стендап"
+
+
+class TestFilterEventsForDay:
+    def test_previous_all_day_event_is_not_repeated(self):
+        events = [
+            CalendarEvent(
+                id="birthday",
+                title="День рождения Ольги",
+                start="2026-08-20",
+                end="2026-08-21",
+            )
+        ]
+
+        result = filter_events_for_day(
+            events, date(2026, 8, 21), "Europe/Volgograd"
+        )
+
+        assert result == []
+
+    def test_all_day_event_is_included_on_its_start_day(self):
+        event = CalendarEvent(
+            id="birthday",
+            title="День рождения Ольги",
+            start="2026-08-20",
+            end="2026-08-21",
+        )
+
+        result = filter_events_for_day(
+            [event], date(2026, 8, 20), "Europe/Volgograd"
+        )
+
+        assert result == [event]
 
 
 class TestGetEventTitle:
